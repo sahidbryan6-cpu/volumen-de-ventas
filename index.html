@@ -478,7 +478,7 @@ noscript .aviso{position:fixed;bottom:0;left:0;right:0;z-index:9;background:var(
 .foto-fondo::after{content:"";position:absolute;inset:0;background:radial-gradient(90% 80% at 30% 50%,rgba(7,10,18,.55),transparent 70%)}
 @keyframes kenburns{from{transform:scale(1.05)}to{transform:scale(1.15) translate(-1.5%,-1%)}}
 .foto-fondo--portada{left:30%;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 38%);mask-image:linear-gradient(90deg,transparent 0%,#000 38%)}
-.foto-fondo--portada img{opacity:.55;filter:saturate(.9) contrast(1.08) brightness(.8)}
+.foto-fondo--portada img{opacity:.22;filter:saturate(.9) contrast(1.08) brightness(.8)}
 .foto-fondo--portada::after{background:linear-gradient(180deg,rgba(7,10,18,.35),rgba(7,10,18,.15) 40%,rgba(7,10,18,.85)),linear-gradient(90deg,rgba(7,10,18,.6),transparent 50%)}
 .foto-marco{position:relative;overflow:hidden;border-radius:12px;width:100%}
 .foto-marco img{display:block;width:100%;height:clamp(110px,16vh,170px);object-fit:cover;transform:scale(1.02)}
@@ -527,7 +527,7 @@ noscript .aviso{position:fixed;bottom:0;left:0;right:0;z-index:9;background:var(
 .icono{box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 3px 6px -2px rgba(0,0,0,.5)}
 
 .foto-marco img,.foto-tile img{filter:saturate(.95) contrast(1.04)}
-.escenario canvas{filter:drop-shadow(0 30px 40px rgba(0,0,0,.45))}
+
 /* photographic grain + lens vignette over everything */
 body::after{content:"";position:fixed;inset:-50%;z-index:4;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E");
@@ -1109,6 +1109,7 @@ class Stage {
     Object.assign(key.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 40 });
     s.add(key);
     const a = new T.PointLight(0x8b7cff, 1.4, 28); a.position.set(6, 1, 4); s.add(a);
+    const fill = new T.DirectionalLight(0xfff1dc, 0.55); fill.position.set(4, 2, 9); s.add(fill);
     const b = new T.PointLight(0x22d3ee, 1.0, 28); b.position.set(-6, 3, -3); s.add(b);
   }
   resize() {
@@ -1272,15 +1273,15 @@ function escenaPortada(el) {
   const group = new T.Group(); st.scene.add(group);
   shadowFloor(st, -3.1, 0.3);
   const r = rng(42), boxes = [];
-  const lugares = [[-2.6, 1.4, 0.4], [1.2, 2.0, -0.8], [3.4, -0.2, 0.3], [-0.6, -1.6, 1.0], [-3.6, -1.4, -1.2], [2.0, -2.4, -1.6], [0.6, 0.2, 1.8], [-1.9, 3.3, -2.4]];
+  const lugares = [[-2.8, 1.6, 0], [0.4, 2.5, -1.2], [3.0, 1.2, 0], [-1.2, -0.8, 0.8], [1.8, -1.5, 0.6], [-3.9, -2.5, -1], [0.0, 0.6, -2.8]];
   lugares.forEach(([x, y, z], i) => {
-    const s = 1.35 + r() * 0.6, b = cajaReal(i, s * 1.25, s * 0.9, s);
+    const s = 1.1 + r() * 0.25, b = cajaReal(i, s * 1.25, s * 0.9, s);
     const home = new T.Vector3(x, y, z);
-    b.position.copy(home); b.rotation.set((r() - 0.5) * 1.4, r() * 6.28, (r() - 0.5) * 1.2);
-    b.userData = { home, ph: r() * 6.28, rs: new T.Vector3((r() - 0.5) * 0.14, (r() - 0.5) * 0.22, (r() - 0.5) * 0.1) };
+    b.position.copy(home); b.rotation.set((r() - 0.5) * 0.6, r() * 6.28, (r() - 0.5) * 0.5);
+    b.userData = { home, ph: r() * 6.28, rs: new T.Vector3(0, (r() < 0.5 ? -1 : 1) * (0.08 + r() * 0.1), 0) };
     group.add(b); boxes.push(b);
   });
-  st.fit = () => fitCam(st, 0.3, 12.5, 0.2, 1.15);
+  st.fit = () => fitCam(st, 0.3, 11.5, 0.2, 1.15);
   st.fit();
   let intro = false;
   st.enter = () => {
@@ -1404,24 +1405,22 @@ function escenaDual(el) {
   const disco = new T.Mesh(new T.CylinderGeometry(4, 4.15, 0.16, 72), new T.MeshStandardMaterial({ color: col("#141b30"), roughness: 0.55, metalness: 0.2 }));
   disco.position.y = 0.08; disco.receiveShadow = true; group.add(disco);
   const piezas = [];
-  [[0, 0], [0.95, 0], [0, 0.95], [0.48, 0.48]].forEach(([dx, dz], i) => {
-    const alto = i === 3 ? 3 : 2;
+  [[0, 0, 3], [0.94, 0, 2], [0, 0.94, 2], [0.94, 0.94, 1]].forEach(([dx, dz, alto], i) => {
     for (let k = 0; k < alto; k++) {
       const b = caja(i, 0.85, 0.62, 0.85);
-      b.position.set(-1.9 + dx, 0.16 + 0.31 + k * 0.64 + (i === 3 ? 0 : 0), -0.4 + dz);
-      if (i === 3) b.position.y += 0;
-      b.rotation.y = (rng(i * 7 + k)() - 0.5) * 0.25; group.add(b); piezas.push(b);
+      b.position.set(-2.3 + dx, 0.16 + 0.31 + k * 0.64, -0.6 + dz);
+      b.rotation.y = (rng(i * 7 + k)() - 0.5) * 0.08; group.add(b); piezas.push(b);
     }
   });
   const r = rng(3);
-  [[1.5, -0.2, 12], [2.6, 0.5, 7], [1.9, 1.1, 4]].forEach(([x, z, n]) => {
+  [[1.4, -0.5, 12], [2.8, -0.3, 7], [2.1, 0.9, 4]].forEach(([x, z, n]) => {
     for (let k = 0; k < n; k++) {
       const m = moneda();
       m.position.set(x + (r() - 0.5) * 0.06, 0.16 + 0.065 + k * 0.135, z + (r() - 0.5) * 0.06);
       m.rotation.y = r() * 6.28; group.add(m); piezas.push(m);
     }
   });
-  const suelta = moneda(); suelta.position.set(2.9, 0.75, -0.9); suelta.rotation.set(0.2, 0, 1.25); group.add(suelta);
+  const suelta = moneda(); suelta.position.set(3.4, 0.78, 1.25); suelta.rotation.set(0.2, 0, 1.25); group.add(suelta);
   const eU = st.label("etq--dual", "Unidades"), eD = st.label("etq--dual", "Dinero");
   st.fit = () => fitCam(st, 3.4, 9.6, 0.9, 1.25);
   st.fit();
@@ -1433,8 +1432,8 @@ function escenaDual(el) {
   st.update = (t) => {
     if (!RM) { group.rotation.y = Math.sin(t * 0.00025) * 0.45 + st.pointer.x * 0.3; suelta.rotation.y = t * 0.002; }
     group.updateMatrixWorld();
-    st.place(eU, group.localToWorld(tmp.set(-1.45, 2.6, 0)));
-    st.place(eD, group.localToWorld(tmp.set(1.9, 2.3, 0.2)));
+    st.place(eU, group.localToWorld(tmp.set(-1.85, 2.6, -0.1)));
+    st.place(eD, group.localToWorld(tmp.set(2.1, 2.3, 0)));
     st.dirty = true;
   };
   return st;
